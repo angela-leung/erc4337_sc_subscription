@@ -3,16 +3,18 @@ const { expect } = require('chai')
 const { ethers } = require('hardhat')
 const { AbiCoder } = require('ethers')
 
-describe('SubscriptionServiceLight  ', function () {
+describe('SubscriptionServiceLight', function () {
   // let SubscriptionService
   let subscriptionService
   let userWallet
   let serviceProvider
   const subscriptionFee = ethers.parseEther('0.01')
   let subscriber
+  let subscriber2
 
   beforeEach(async function () {
-    ;[serviceProvider, subscriber, ...others] = await ethers.getSigners()
+    ;[serviceProvider, subscriber, subscriber2, ...others] =
+      await ethers.getSigners()
     subscriptionService = await ethers.deployContract(
       'SubscriptionServiceLight',
       [subscriptionFee],
@@ -135,6 +137,47 @@ describe('SubscriptionServiceLight  ', function () {
     } catch (error) {
       expect(error.message).to.includes('Too early for payment')
     }
+  })
+
+  it('Should return correct subscription status and next payment date for all subscribers', async function () {
+    //  first user register subscription
+    const userWallet2 = await ethers.deployContract(
+      'CredentialAccountLight',
+      subscriber2
+    )
+
+    await userWallet2.waitForDeployment()
+
+    // send 0.5 ETH to userWallet
+    await subscriber2.sendTransaction({
+      to: userWallet2.target,
+      value: ethers.parseEther('0.5'),
+    })
+
+    await userWallet
+      .connect(subscriber)
+      .registerSubscription(subscriptionService, {
+        value: subscriptionFee,
+      })
+
+    await userWallet2
+      .connect(subscriber2)
+      .registerSubscription(subscriptionService, {
+        value: subscriptionFee,
+      })
+
+    // Call the getAllSubscribers function
+    const [addresses, isActiveArray, nextPaymentDateArray] =
+      await subscriptionService.getAllSubscribers()
+
+    // Check the returned values
+    expect(addresses[0]).to.equal(userWallet.target)
+    expect(isActiveArray[0]).to.equal(true)
+    expect(nextPaymentDateArray[0]).to.be.above(0)
+
+    expect(addresses[1]).to.equal(userWallet2.target)
+    expect(isActiveArray[1]).to.equal(true)
+    expect(nextPaymentDateArray[1]).to.be.above(0)
   })
 
   it('Should return the correct payment history', async function () {
