@@ -1,0 +1,14 @@
+{
+  "name": "hardhat-javascript-starter",
+  "scripts": {
+    "build": "npx thirdweb@latest detect",
+    "deploy": "npx thirdweb@latest deploy",
+    "release": "npx thirdweb@latest release"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@thirdweb-dev/contracts": "3.8",
+    "ethers": "^6.11.1",
+    "hardhat": "^2.22.2"
+  }
+}
